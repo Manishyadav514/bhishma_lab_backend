@@ -48,7 +48,7 @@ const registerUser = async (req: Request, res: Response): Promise<Response> => {
       message: 'Password is not strong enough',
     })
   }
-
+  const userAgent = req.get('UserSchema-Agent')
   try {
     // Check if email already exists
     const exists = await UserSchema.findOne({ username })
@@ -80,7 +80,6 @@ const registerUser = async (req: Request, res: Response): Promise<Response> => {
 
     // Save new user
     const newentry = await newUser.save()
-    const token = createAccessToken(`${newentry._id}`)
 
     // reuire for email verification
     // const tempOrigin = req.get('origin')
@@ -97,19 +96,42 @@ const registerUser = async (req: Request, res: Response): Promise<Response> => {
     //   })
 
     // Respond with success
-    return res.status(201).json({
-      status: '201',
+    // return res.status(201).json({
+    //   status: '201',
+    //   email: newentry.email,
+    //   token,
+    //   username: username || '',
+    //   firstName: firstName || '',
+    //   lastName: lastName || '',
+    //   mobile: mobile || '',
+    //   address: address || '',
+    //   profile: profile || '',
+    //   verifiedUser: false,
+    //   verifiedDate: '',
+    // })
+
+    const userData = {
+      _id: newentry._id,
+      username: newentry.username,
       email: newentry.email,
-      token,
-      username: username || '',
-      firstName: firstName || '',
-      lastName: lastName || '',
-      mobile: mobile || '',
-      address: address || '',
-      profile: profile || '',
-      verifiedUser: false,
-      verifiedDate: '',
+      firstName: newentry.firstName,
+      lastName: newentry.lastName,
+      mobile: newentry.mobile,
+      address: newentry.address,
+      profile: newentry.profile,
+    }
+
+
+    const accessToken = createAccessToken(`${newentry._id}`)
+    const refreshToken = await createRefreshToken(newentry._id, userAgent)
+
+    return res.status(200).json({
+      message: 'Login successful',
+      accessToken,
+      refreshToken,
+      user: userData,
     })
+
   } catch (error) {
     // Log the error for internal debugging
     console.error('Internal Server Error:', error)
@@ -139,18 +161,10 @@ const loginUser = async (req: Request, res: Response): Promise<Response> => {
 
     if (!userObj) {
       return res.status(404).json({
-        message: 'UserSchema not found',
+        message: 'User not found',
         status: '404 Not Found',
       })
     }
-
-    // if (!userObj.verifiedUser) {
-    //   // throw new CustomAPIError.UnauthorizedError('Please verify your email')
-    //   return res.status(400).json({
-    //     message: 'Please verify your email first',
-    //     status: '400',
-    //   })
-    // }
 
     const userPassword: string = userObj.password || ''
 
@@ -208,7 +222,7 @@ const loginUser = async (req: Request, res: Response): Promise<Response> => {
     console.log(error)
     return res.status(500).json({
       status: '500 Internal Server Error',
-      message: '500 Internal Server Error, UserSchema not logged in',
+      message: '500 Internal Server Error, User not logged in',
     })
   }
 }
