@@ -1,11 +1,13 @@
 import express, { Express } from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
-import 'dotenv/config'
 import * as middleware from './middleware'
 import articlesRouter from './routers/articles.router'
 import authRouter from './routers/auth.router'
 import { connectDB } from './db/connect'
+import dotenv from 'dotenv'
+dotenv.config()
+
 const ENV = process.env.NODE_ENV || 'production'
 const PORT: string | number = process.env.PORT || 3000
 const MONGO_URI: string = process.env.MONGO_URI || ''
