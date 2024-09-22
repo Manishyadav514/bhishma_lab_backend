@@ -9,23 +9,20 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 const ENV = process.env.NODE_ENV || 'production'
-const PORT: string | number = process.env.PORT || 3000
+const PORT: string | number = process.env.PORT || 5500
 const MONGO_URI: string = process.env.MONGO_URI || ''
-
 const app: Express = express()
 
 app.use(helmet())
 app.use(cors())
 app.use(express.json())
 app.use(middleware.httpLogger)
-// routes
 app.get('/api/v1', (req, res) => {
   console.log('Home GET Request')
   res.status(200).json({ ms: 'Home GET Request' })
 })
 app.use('/api/v1/articles', articlesRouter)
 app.use('/api/v1/auth', authRouter)
-// Error hanlding middleware
 app.use(middleware.errorHandler)
 app.use(middleware.notFoundHandler)
 
@@ -33,7 +30,9 @@ const server = async () => {
   try {
     await connectDB(MONGO_URI)
     app.listen(PORT, () =>
-      console.log(`Server is listening on PORT ${PORT}... on ${ENV} environment`)
+      console.log(
+        `Server is listening on PORT ${PORT}... on ${ENV} environment`
+      )
     )
   } catch (error) {
     console.log(error)
@@ -43,4 +42,3 @@ const server = async () => {
 server()
 
 export { app as default, server }
-

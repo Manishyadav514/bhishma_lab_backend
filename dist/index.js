@@ -45,14 +45,12 @@ app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use(middleware.httpLogger);
-// routes
 app.get('/api/v1', (req, res) => {
     console.log('Home GET Request');
     res.status(200).json({ ms: 'Home GET Request' });
 });
 app.use('/api/v1/articles', articles_router_1.default);
 app.use('/api/v1/auth', auth_router_1.default);
-// Error hanlding middleware
 app.use(middleware.errorHandler);
 app.use(middleware.notFoundHandler);
 const server = async () => {

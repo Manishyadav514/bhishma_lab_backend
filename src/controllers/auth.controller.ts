@@ -1,5 +1,8 @@
 import { Request, Response } from 'express'
-import { createAccessToken, createRefreshToken, } from '../middleware/auth.middleware'
+import {
+  createAccessToken,
+  createRefreshToken,
+} from '../middleware/auth.middleware'
 import { HttpStatusCodes } from '../enum/StatusCode'
 // import { attachCookiesToResponse } from '../middleware/auth.middleware'
 // import UserSchema from '../models/UserSchema'
@@ -18,7 +21,16 @@ import { CustomAPIError } from '../errors'
 import { comparePassword } from '../utils/auth.utils'
 
 const registerUser = async (req: Request, res: Response): Promise<Response> => {
-  const { email, password, username, firstName, lastName, mobile, address, profile, } = req.body
+  const {
+    email,
+    password,
+    username,
+    firstName,
+    lastName,
+    mobile,
+    address,
+    profile,
+  } = req.body
   // Validate input fields
   if (!email || !password || !username) {
     return res.status(400).json({
@@ -36,13 +48,14 @@ const registerUser = async (req: Request, res: Response): Promise<Response> => {
   }
 
   // Validate password strength
-  if (!validator.isStrongPassword(password,
-    {
+  if (
+    !validator.isStrongPassword(password, {
       minLength: 8,
       minUppercase: 1,
       minNumbers: 1,
       minSymbols: 1,
-    })) {
+    })
+  ) {
     return res.status(400).json({
       status: '400',
       message: 'Password is not strong enough',
@@ -121,7 +134,6 @@ const registerUser = async (req: Request, res: Response): Promise<Response> => {
       profile: newentry.profile,
     }
 
-
     const accessToken = createAccessToken(`${newentry._id}`)
     const refreshToken = await createRefreshToken(newentry._id, userAgent)
 
@@ -131,7 +143,6 @@ const registerUser = async (req: Request, res: Response): Promise<Response> => {
       refreshToken,
       user: userData,
     })
-
   } catch (error) {
     // Log the error for internal debugging
     console.error('Internal Server Error:', error)
@@ -139,11 +150,11 @@ const registerUser = async (req: Request, res: Response): Promise<Response> => {
     // Respond with appropriate error message
     return res.status(500).json({
       status: '500',
-      message: 'UserSchema not created due to an internal error. Please try again later.',
+      message:
+        'UserSchema not created due to an internal error. Please try again later.',
     })
   }
 }
-
 
 const loginUser = async (req: Request, res: Response): Promise<Response> => {
   const { password, username } = req.body
@@ -168,17 +179,13 @@ const loginUser = async (req: Request, res: Response): Promise<Response> => {
 
     const userPassword: string = userObj.password || ''
 
-    const validPassword = await bcrypt.compare(
-      req.body.password,
-      userPassword
-    )
+    const validPassword = await bcrypt.compare(req.body.password, userPassword)
 
     if (!validPassword) {
       return res.status(400).json({
         message: 'Invalid password',
         status: '400',
       })
-
     }
 
     const userData = {
@@ -199,14 +206,13 @@ const loginUser = async (req: Request, res: Response): Promise<Response> => {
     const existingToken = await tokenModels.findOne({ user: userObj._id })
 
     if (existingToken) {
-      const { isValid } = existingToken
-      if (!isValid) {
-        throw new CustomAPIError.UnauthorizedError('Invalid Credentials')
-      }
+      // const { isValid } = existingToken
+      // if (!isValid) {
+      //   throw new CustomAPIError.UnauthorizedError('Invalid Credentials')
+      // }
       refreshToken = existingToken.refreshToken
       // attachCookiesToResponse({ res, accessToken, refreshToken })
-    }
-    else {
+    } else {
       refreshToken = await createRefreshToken(userObj._id, userAgent)
       // attachCookiesToResponse({ res, accessToken, refreshToken })
     }
@@ -217,12 +223,11 @@ const loginUser = async (req: Request, res: Response): Promise<Response> => {
       refreshToken,
       user: userData,
     })
-
   } catch (error) {
     console.log(error)
     return res.status(500).json({
-      status: '500 Internal Server Error',
-      message: '500 Internal Server Error, User not logged in',
+      status: '500',
+      message: 'Something Went Wrong',
     })
   }
 }
@@ -247,8 +252,6 @@ const logoutUser = async (req: Request, res: Response) => {
   res.status(HttpStatusCodes.OK).json({ msg: 'user logged out!' })
 }
 
-
-
 const verifyEmail = async (req: Request, res: Response) => {
   const { verificationToken, username } = req.body
   const user = await UserSchema.findOne({ username })
@@ -261,16 +264,13 @@ const verifyEmail = async (req: Request, res: Response) => {
     throw new CustomAPIError.UnauthorizedError('Verification Failed')
   }
 
-  user.verifiedUser = true,
-    user.verificationToken = ''
+  (user.verifiedUser = true), (user.verificationToken = '')
   user.verifiedDate = new Date().toISOString() // Use a date string for consistency
 
   await user.save()
 
   res.status(200).json({ msg: 'Email Verified' })
 }
-
-
 
 const userObj = async (req: Request, res: Response) => {
   const { username, password } = req.body
@@ -304,11 +304,9 @@ const userObj = async (req: Request, res: Response) => {
   }
 
   return res.status(200).json({
-
     user: userData,
   })
 }
-
 
 const forgotPassword = async (req: Request, res: Response) => {
   const { username } = req.body
@@ -350,10 +348,7 @@ const resetPassword = async (req: Request, res: Response) => {
   const user = await UserSchema.findOne({ username })
 
   if (user) {
-
-    if (
-      user.verificationToken === hashString(token)
-    ) {
+    if (user.verificationToken === hashString(token)) {
       user.password = password
       user.verificationToken = null
       user.tokenExpirationDate = null

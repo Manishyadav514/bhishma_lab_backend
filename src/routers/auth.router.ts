@@ -11,5 +11,4 @@ router.post('/reset-password', resetPassword)
 router.post('/forgot-password', forgotPassword)
 router.post('/user-profile', userObj)
 
-
 export { router as default }
