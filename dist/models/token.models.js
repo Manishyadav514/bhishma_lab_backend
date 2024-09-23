@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = require("mongoose");
 const TokenSchema = new mongoose_1.Schema({
     refreshToken: { type: String, required: true },
-    userAgent: { type: String, required: true },
+    // userAgent: { type: String, required: true },
     isValid: { type: Boolean, default: true },
     user: {
         type: mongoose_1.Types.ObjectId,

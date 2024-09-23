@@ -2,6 +2,8 @@ import jwt, { JwtPayload, Secret } from 'jsonwebtoken'
 import { Request, Response, NextFunction } from 'express'
 import { UserSchema } from '../models/user.models'
 import tokenModels from '../models/token.models'
+import dotenv from 'dotenv'
+dotenv.config()
 
 
 // Extend the Request interface to include the user property
@@ -11,6 +13,7 @@ interface AuthenticatedRequest extends Request {
 
 const tokenSecret = process.env.JWT_SECRET || ''
 const refreshTokenSecret = process.env.JWT_REFRESH_SECRET || ''
+
 
 // authenticateJWT middleware is applied to all routes except /login and /register
 // to prevent unauthenticated users from accessing protected routes
@@ -48,12 +51,13 @@ const createAccessToken = (_id: string) => {
     return jwt.sign({ _id }, tokenSecret, { expiresIn: '1d' })
 }
 
-const createRefreshToken = async (userId: any, userAgent: any) => {
+const createRefreshToken = async (userId: any) => {
+    // save useragent for specific device security 
     const refreshToken = jwt.sign({ userId }, refreshTokenSecret, { expiresIn: '7d' })
 
     const token = new tokenModels({
         refreshToken,
-        userAgent,
+
         user: userId,
     })
 

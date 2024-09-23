@@ -21,8 +21,10 @@ const validator_1 = __importDefault(require("validator"));
 const user_models_1 = require("../models/user.models");
 const errors_2 = require("../errors");
 const auth_utils_1 = require("../utils/auth.utils");
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const registerUser = async (req, res) => {
-    const { email, password, username, firstName, lastName, mobile, address, profile, } = req.body;
+    const { email, password, username, firstName, lastName, mobile, address, profile, role, } = req.body;
     // Validate input fields
     if (!email || !password || !username) {
         return res.status(400).json({
@@ -49,35 +51,46 @@ const registerUser = async (req, res) => {
             message: 'Password is not strong enough',
         });
     }
-    const userAgent = req.get('UserSchema-Agent');
+    const usernameSmall = username.toLowerCase();
+    // const userAgent = req.get('UserSchema-Agent')
     try {
         // Check if email already exists
-        const exists = await user_models_1.UserSchema.findOne({ username });
-        if (exists) {
+        const emailExists = await user_models_1.UserSchema.findOne({ email });
+        if (emailExists) {
             return res.status(400).json({
                 status: '400',
-                message: 'username already exists',
+                message: 'Email already exists',
+            });
+        }
+        // Check if username already exists
+        const usernameExists = await user_models_1.UserSchema.findOne({
+            username: usernameSmall,
+        });
+        if (usernameExists) {
+            return res.status(400).json({
+                status: '400',
+                message: 'Username already exists',
             });
         }
         // Generate salt and hash password
         const salt = await bcrypt_1.default.genSalt(10);
         const hashedPassword = await bcrypt_1.default.hash(password, salt);
-        // Create new user
+        // Create new user with optional fields set to null if not provided
         const newUser = new user_models_1.UserSchema({
             email,
             password: hashedPassword,
-            username,
-            firstName,
-            lastName,
-            mobile,
-            address,
-            profile,
-            role: 'admin',
+            username: usernameSmall,
+            firstName: firstName || null,
+            lastName: lastName || null,
+            mobile: mobile || null,
+            address: address || null,
+            profile: profile || null,
+            role,
             verifiedUser: false,
-            verifiedDate: '',
+            verifiedDate: null,
         });
         // Save new user
-        const newentry = await newUser.save();
+        const newEntry = await newUser.save();
         // reuire for email verification
         // const tempOrigin = req.get('origin')
         // const protocol = req.protocol
@@ -90,34 +103,36 @@ const registerUser = async (req, res) => {
         //     verificationToken: user.verificationToken,
         //     origin,
         //   })
-        // Respond with success
-        // return res.status(201).json({
-        //   status: '201',
-        //   email: newentry.email,
-        //   token,
-        //   username: username || '',
-        //   firstName: firstName || '',
-        //   lastName: lastName || '',
-        //   mobile: mobile || '',
-        //   address: address || '',
-        //   profile: profile || '',
-        //   verifiedUser: false,
-        //   verifiedDate: '',
-        // })
+        // Prepare user data for response
         const userData = {
-            _id: newentry._id,
-            username: newentry.username,
-            email: newentry.email,
-            firstName: newentry.firstName,
-            lastName: newentry.lastName,
-            mobile: newentry.mobile,
-            address: newentry.address,
-            profile: newentry.profile,
+            username: newEntry.username,
+            email: newEntry.email,
+            firstName: newEntry.firstName,
+            lastName: newEntry.lastName,
+            mobile: newEntry.mobile,
+            address: newEntry.address,
+            profile: newEntry.profile,
+            isVerifiedUser: newEntry.verifiedUser,
         };
-        const accessToken = (0, auth_middleware_1.createAccessToken)(`${newentry._id}`);
-        const refreshToken = await (0, auth_middleware_1.createRefreshToken)(newentry._id, userAgent);
+        // Create tokens
+        const accessToken = (0, auth_middleware_1.createAccessToken)(newEntry._id.toString());
+        let refreshToken = '';
+        // Check for existing token
+        const existingToken = await token_models_1.default.findOne({ user: newEntry._id });
+        if (existingToken && existingToken.isValid) {
+            refreshToken = existingToken.refreshToken;
+        }
+        else {
+            refreshToken = await (0, auth_middleware_1.createRefreshToken)(newEntry._id);
+            await token_models_1.default.create({
+                user: newEntry._id,
+                refreshToken,
+                isValid: true,
+            });
+        }
+        // Respond with success
         return res.status(200).json({
-            message: 'Login successful',
+            message: 'Registration successful',
             accessToken,
             refreshToken,
             user: userData,
@@ -129,7 +144,7 @@ const registerUser = async (req, res) => {
         // Respond with appropriate error message
         return res.status(500).json({
             status: '500',
-            message: 'UserSchema not created due to an internal error. Please try again later.',
+            message: 'User not created due to an internal error. Please try again later.',
         });
     }
 };
@@ -144,8 +159,9 @@ const loginUser = async (req, res) => {
         });
     }
     try {
-        const userAgent = req.get('UserSchema-Agent');
-        const userObj = await user_models_1.UserSchema.findOne({ username });
+        const usernameSmall = username.toLowerCase();
+        // const userAgent = req.get('UserSchema-Agent')
+        const userObj = await user_models_1.UserSchema.findOne({ username: usernameSmall });
         if (!userObj) {
             return res.status(404).json({
                 message: 'User not found',
@@ -177,13 +193,16 @@ const loginUser = async (req, res) => {
         if (existingToken) {
             const { isValid } = existingToken;
             if (!isValid) {
-                throw new errors_2.CustomAPIError.UnauthorizedError('Invalid Credentials');
+                return res.status(200).json({
+                    message: 'Anuthorized Access',
+                    status: '200',
+                });
             }
             refreshToken = existingToken.refreshToken;
             // attachCookiesToResponse({ res, accessToken, refreshToken })
         }
         else {
-            refreshToken = await (0, auth_middleware_1.createRefreshToken)(userObj._id, userAgent);
+            refreshToken = await (0, auth_middleware_1.createRefreshToken)(userObj._id);
             // attachCookiesToResponse({ res, accessToken, refreshToken })
         }
         return res.status(200).json({
@@ -194,10 +213,10 @@ const loginUser = async (req, res) => {
         });
     }
     catch (error) {
-        console.log(error);
+        console.error(error);
         return res.status(500).json({
-            status: '500 Internal Server Error',
-            message: '500 Internal Server Error, User not logged in',
+            status: '500',
+            message: 'Internal Server Error. Please check later.',
         });
     }
 };
@@ -227,9 +246,8 @@ const verifyEmail = async (req, res) => {
     if (user.verificationToken !== verificationToken) {
         throw new errors_2.CustomAPIError.UnauthorizedError('Verification Failed');
     }
-    user.verifiedUser = true,
-        user.verificationToken = '';
-    user.verifiedDate = new Date().toISOString(); // Use a date string for consistency
+    (user.verifiedUser = true), (user.verificationToken = '');
+    user.verifiedDate = new Date(); // Use a date string for consistency
     await user.save();
     res.status(200).json({ msg: 'Email Verified' });
 };
@@ -301,8 +319,8 @@ const resetPassword = async (req, res) => {
     if (user) {
         if (user.verificationToken === (0, createHash_1.hashString)(token)) {
             user.password = password;
-            user.verificationToken = null;
-            user.tokenExpirationDate = null;
+            // user.verificationToken = null
+            // user.tokenExpirationDate = null
             await user.save();
         }
     }

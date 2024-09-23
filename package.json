@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "description": "Backend of an open source project",
   "main": "dist/index.js",
-  "type": "module", 
   "scripts": {
     "start": "node dist/index.js",
     "dev": "npm run build && concurrently -k \"tsc -w\" \"nodemon dist/index.js\"",

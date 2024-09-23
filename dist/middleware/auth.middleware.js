@@ -7,6 +7,8 @@ exports.attachCookiesToResponse = exports.createRefreshToken = exports.createAcc
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const user_models_1 = require("../models/user.models");
 const token_models_1 = __importDefault(require("../models/token.models"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const tokenSecret = process.env.JWT_SECRET || '';
 const refreshTokenSecret = process.env.JWT_REFRESH_SECRET || '';
 // authenticateJWT middleware is applied to all routes except /login and /register
@@ -39,11 +41,11 @@ const createAccessToken = (_id) => {
     return jsonwebtoken_1.default.sign({ _id }, tokenSecret, { expiresIn: '1d' });
 };
 exports.createAccessToken = createAccessToken;
-const createRefreshToken = async (userId, userAgent) => {
+const createRefreshToken = async (userId) => {
+    // save useragent for specific device security 
     const refreshToken = jsonwebtoken_1.default.sign({ userId }, refreshTokenSecret, { expiresIn: '7d' });
     const token = new token_models_1.default({
         refreshToken,
-        userAgent,
         user: userId,
     });
     await token.save();

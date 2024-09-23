@@ -19,7 +19,7 @@ app.use(express.json())
 app.use(middleware.httpLogger)
 app.get('/api/v1', (req, res) => {
   console.log('Home GET Request')
-  res.status(200).json({ ms: 'Home GET Request' })
+  res.status(200).json({ ms: 'Home GET Request', port: `${PORT}` })
 })
 app.use('/api/v1/articles', articlesRouter)
 app.use('/api/v1/auth', authRouter)

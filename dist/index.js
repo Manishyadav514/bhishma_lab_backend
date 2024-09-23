@@ -37,7 +37,7 @@ const connect_1 = require("./db/connect");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const ENV = process.env.NODE_ENV || 'production';
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5500;
 const MONGO_URI = process.env.MONGO_URI || '';
 const app = (0, express_1.default)();
 exports.default = app;
@@ -47,7 +47,7 @@ app.use(express_1.default.json());
 app.use(middleware.httpLogger);
 app.get('/api/v1', (req, res) => {
     console.log('Home GET Request');
-    res.status(200).json({ ms: 'Home GET Request' });
+    res.status(200).json({ ms: 'Home GET Request', port: `${PORT}` });
 });
 app.use('/api/v1/articles', articles_router_1.default);
 app.use('/api/v1/auth', auth_router_1.default);

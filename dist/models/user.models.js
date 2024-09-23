@@ -8,7 +8,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 exports.user = new mongoose_1.default.Schema({
     username: {
         type: String,
-        required: [true, 'Please provide unique Username'],
+        required: [true, 'Please provide a unique Username'],
         unique: true,
     },
     password: {
@@ -21,11 +21,26 @@ exports.user = new mongoose_1.default.Schema({
         required: [true, 'Please provide a unique email'],
         unique: true,
     },
-    firstName: { type: String },
-    lastName: { type: String },
-    mobile: { type: Number },
-    address: { type: String },
-    profile: { type: String },
+    firstName: {
+        type: String,
+        default: null,
+    },
+    lastName: {
+        type: String,
+        default: null,
+    },
+    mobile: {
+        type: Number,
+        default: null,
+    },
+    address: {
+        type: String,
+        default: null,
+    },
+    profile: {
+        type: String,
+        default: null,
+    },
     role: {
         type: String,
         enum: ['admin', 'user'],
@@ -35,10 +50,17 @@ exports.user = new mongoose_1.default.Schema({
         type: Boolean,
         default: false,
     },
-    verificationToken: { type: String },
-    verifiedDate: { type: String },
+    verificationToken: {
+        type: String || null,
+        default: null,
+    },
+    verifiedDate: {
+        type: Date,
+        default: null,
+    },
     tokenExpirationDate: {
         type: Date,
+        default: null,
     },
 }, {
     collection: 'usercollection',
